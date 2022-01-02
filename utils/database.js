@@ -1,6 +1,6 @@
 const Sequelize = require("sequelize");
 
-const sequelize = new Sequelize("tracker", "root", "Tc071643", {
+const sequelize = new Sequelize("db", "user", "pass", {
   dialect: "mysql",
   host: "localhost",
 });
