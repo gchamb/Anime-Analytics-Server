@@ -13,6 +13,7 @@ const PlanToWatch = require("./models/plantowatch");
 const Rating = require("./models/rating");
 
 const app = express();
+
 app.use(parser.json());
 app.use(parser.urlencoded({ extended: false }));
 app.use(cors());
@@ -21,6 +22,7 @@ app.use(authRoutes);
 app.use(activityRoutes);
 app.use((err, req, res, next) => {
   if (err.status === undefined) {
+    console.log(err.message);
     err.status = 500;
   }
   return res.status(err.status).json({ error: err.message });
@@ -32,6 +34,11 @@ Anime.belongsTo(Watching, {
   foreignKey: { allowNull: true },
 });
 Anime.belongsTo(PlanToWatch, {
+  constraints: true,
+  onDelete: "CASCADE",
+  foreignKey: { allowNull: true },
+});
+Anime.belongsTo(Rating, {
   constraints: true,
   onDelete: "CASCADE",
   foreignKey: { allowNull: true },

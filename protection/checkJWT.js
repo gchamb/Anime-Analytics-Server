@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const SECRET = "greatnessinitspurestform";
+exports.SECRET = "secret";
 exports.isAuth = (req, res, next) => {
   // Gets the token out of the Header
   const token = req.get("Authorization").split(" ")[1];
@@ -13,12 +13,12 @@ exports.isAuth = (req, res, next) => {
   let decodedToken;
   try {
     // Checks if the token is valid
-    decodedToken = jwt.verify(token, SECRET);
+    decodedToken = jwt.verify(token, this.SECRET);
   } catch (err) {
     // If not valid then return not authenticated
     const error = new Error("Not Authenticated");
-    err.status = 401;
-    next(err);
+    error.status = 401;
+    next(error);
   }
 
   // attaches the user id from the token to all of the requests for the user

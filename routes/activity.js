@@ -10,7 +10,7 @@ router.get("/watching&page=:pg", protection, act.getWatching);
 // POST => adds anime to watching list
 router.post("/watching", protection, act.postWatching);
 // DELETE => deletes anime from watching list
-router.delete("/watching", protection, act.deleteWatching);
+router.delete("/watching/:id", protection, act.deleteWatching);
 
 /* Plan to Watch List Routes */
 // GET => returns the plan to watch list of a user
@@ -18,7 +18,11 @@ router.get("/plan&page=:pg", protection, act.getPlanToWatch);
 // POST => adds anime to plan to watch list
 router.post("/plan", protection, act.postPlanToWatch);
 // DELETE => deletes animes from plan to watch list
-router.delete("/plan", protection, act.deletePlanToWatch);
+router.delete("/plan/:id", protection, act.deletePlanToWatch);
+
+/* List Sharing Route */
+router.get("/shared/:token&page=:pg", act.getShared);
+router.get("/share", protection, act.getShare);
 
 /* Stat Routes */
 // GET => returns the stats of a user based from their animes
@@ -30,8 +34,8 @@ router.get("/rating&page=:pg", protection, act.getRating);
 // POST => add the animes that the user rated
 router.post("/rating", protection, act.postRating);
 // PATCH => update the animes that the user rated
-router.patch("/rating", protection, act.patchRating);
+router.patch("/rating/:id", protection, act.patchRating);
 // DELETE => update the animes that the user rated
-router.delete("/rating", protection, act.deleteRating);
+router.delete("/rating/:id", protection, act.deleteRating);
 
 module.exports = router;

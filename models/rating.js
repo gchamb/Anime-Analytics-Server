@@ -8,9 +8,8 @@ const Rating = sequelize.define("rating", {
     allowNull: false,
     primaryKey: true,
   },
-  name: { type: Sequelize.STRING, allowNull: false },
-  monthAdded: { type: Sequelize.STRING, allowNull: false },
   rate: { type: Sequelize.INTEGER, allowNull: false },
+  monthAdded: { type: Sequelize.INTEGER, allowNull: false },
 });
 
 module.exports = Rating;
