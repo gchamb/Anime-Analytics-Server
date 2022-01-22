@@ -71,7 +71,7 @@ exports.getWatching = async (req, res, next) => {
       pages:
         count / ANIMES_PER_PAGES <= 1
           ? 1
-          : Math.round(count / ANIMES_PER_PAGES) + 1,
+          : Math.ceil(count / ANIMES_PER_PAGES),
     });
   } catch (err) {
     const error = new Error(err.message);
@@ -219,7 +219,7 @@ exports.getPlanToWatch = async (req, res, next) => {
       pages:
         count / ANIMES_PER_PAGES <= 1
           ? 1
-          : Math.round(count / ANIMES_PER_PAGES) + 1,
+          : Math.ceil(count / ANIMES_PER_PAGES),
     });
   } catch (err) {
     const error = new Error(err.message);
@@ -412,6 +412,7 @@ exports.getShare = async (req, res, next) => {
 /* Stat Controllers */
 exports.getStats = async (req, res, next) => {
   const userId = req.userId;
+  const year = req.params.year;
   const data = {
     bar: {
       // Animes watched based on rating
@@ -425,7 +426,6 @@ exports.getStats = async (req, res, next) => {
       },
       // Animes watched in a certain month
       animesPerMonth: {
-        0: 0,
         1: 0,
         2: 0,
         3: 0,
@@ -437,6 +437,7 @@ exports.getStats = async (req, res, next) => {
         9: 0,
         10: 0,
         11: 0,
+        12: 0,
       },
       // Animes released in a certain based off what you watched
       animesPerRelease: {},
@@ -451,7 +452,6 @@ exports.getStats = async (req, res, next) => {
       // Total Episodes vs Amount of Anime
       episodesVsAmount: {
         episodesPerMonth: {
-          0: 0,
           1: 0,
           2: 0,
           3: 0,
@@ -463,28 +463,44 @@ exports.getStats = async (req, res, next) => {
           9: 0,
           10: 0,
           11: 0,
+          12: 0,
         },
       },
     },
     radar: {
       topGenre: {},
     },
+    years: [],
   };
   try {
-    const rating = await Rating.findAll({ where: { userId: userId } });
+    let rating;
+    if (year === "null") {
+      rating = await Rating.findAll({ where: { userId: userId } });
+    } else {
+      rating = await Rating.findAll({ where: { userId: userId, year: +year } });
+    }
 
     if (rating.length === 0) {
       return res.status(200).json({ data: "No Data" });
     }
 
     for (let rate of rating) {
+
+      if (year === "null") {
+        if (!data.years.includes(rate.year)) {
+          data.years.push(rate.year);
+        }
+      }
+
       data.bar.animesPerStar[rate.rate] += 1;
-      data.bar.animesPerMonth[rate.monthAdded] += 1;
+      data.bar.animesPerMonth[rate.month] += 1;
 
       const [anime] = await Anime.findAll({ where: { ratingId: rate.id } });
 
       const currentYearReleased = anime.yearReleased;
-      if (currentYearReleased in data.bar.animesPerRelease) {
+      if (currentYearReleased === null) {
+        continue;
+      } else if (currentYearReleased in data.bar.animesPerRelease) {
         data.bar.animesPerRelease[currentYearReleased] += 1;
       } else {
         data.bar.animesPerRelease[currentYearReleased] = 1;
@@ -500,14 +516,16 @@ exports.getStats = async (req, res, next) => {
       });
 
       const currentStudio = anime.studio;
-      if (currentStudio in data.pie.topStudios) {
+      if (currentStudio === null) {
+        continue;
+      } else if (currentStudio in data.pie.topStudios) {
         data.pie.topStudios[currentStudio] += 1;
       } else {
         data.pie.topStudios[currentStudio] = 1;
       }
 
       const currentEpisodes = anime.episodes;
-      data.line.episodesVsAmount.episodesPerMonth[rate.monthAdded] +=
+      data.line.episodesVsAmount.episodesPerMonth[rate.month] +=
         currentEpisodes;
     }
     data.radar.topGenre = { ...data.pie.topGenre };
@@ -580,7 +598,9 @@ exports.postRating = async (req, res, next) => {
   const userId = req.userId;
   const anime = req.body;
   const rate = anime.rate;
+  const date = anime.date.split("-");
   delete anime.rate;
+  delete anime.date;
 
   try {
     // Queries all of the Watching based on the user
@@ -606,9 +626,10 @@ exports.postRating = async (req, res, next) => {
 
     // Adds the anime and watching row immediately if watching is empty
     if (rating.length === 0) {
-      const date = new Date();
       const ratingAdded = await Rating.create({
-        monthAdded: date.getMonth(),
+        year: +date[0],
+        month: +date[1],
+        day: +date[2],
         rate: rate,
         userId: userId,
       });
@@ -633,9 +654,10 @@ exports.postRating = async (req, res, next) => {
     }
 
     // Creates watching and anime row
-    const date = new Date();
     const rateAdded = await Rating.create({
-      monthAdded: date.getMonth(),
+      year: +date[0],
+      month: +date[1],
+      day: +date[2],
       rate: rate,
       userId: userId,
     });
@@ -656,7 +678,7 @@ exports.postRating = async (req, res, next) => {
 exports.patchRating = async (req, res, next) => {
   const userId = req.userId;
   const rateId = req.params.id;
-  const newRate = req.body.rate;
+  const newRate = req.body.rate.rate;
 
   try {
     await Rating.update(

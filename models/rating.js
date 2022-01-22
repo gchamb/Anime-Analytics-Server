@@ -9,7 +9,9 @@ const Rating = sequelize.define("rating", {
     primaryKey: true,
   },
   rate: { type: Sequelize.INTEGER, allowNull: false },
-  monthAdded: { type: Sequelize.INTEGER, allowNull: false },
+  month: { type: Sequelize.INTEGER, allowNull: false },
+  day: { type: Sequelize.INTEGER, allowNull: false },
+  year: { type: Sequelize.INTEGER, allowNull: false },
 });
 
 module.exports = Rating;

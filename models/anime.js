@@ -14,8 +14,8 @@ const Anime = sequelize.define(
       type: Sequelize.JSON,
     },
     episodes: { type: Sequelize.INTEGER, allowNull: false },
-    yearReleased: { type: Sequelize.INTEGER, allowNull: false },
-    studio: { type: Sequelize.STRING, allowNull: false },
+    yearReleased: { type: Sequelize.INTEGER, allowNull: true },
+    studio: { type: Sequelize.STRING, allowNull: true },
     imageUrl: { type: Sequelize.STRING, allowNull: false },
   },
   {

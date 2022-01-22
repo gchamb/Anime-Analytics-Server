@@ -26,7 +26,7 @@ router.get("/share", protection, act.getShare);
 
 /* Stat Routes */
 // GET => returns the stats of a user based from their animes
-router.get("/stats", protection, act.getStats);
+router.get("/stats&year=:year", protection, act.getStats);
 
 /* Rating List Routes */
 // GET => returns the animes that the user rated
