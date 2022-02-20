@@ -2,9 +2,11 @@ const express = require("express");
 const sequelize = require("./utils/database");
 const parser = require("body-parser");
 const cors = require("cors");
+const redis = require("./utils/redis");
 
 const activityRoutes = require("./routes/activity");
 const authRoutes = require("./routes/auth");
+const jikanRoutes = require("./routes/jikan");
 
 const User = require("./models/user");
 const Anime = require("./models/anime");
@@ -18,6 +20,7 @@ app.use(parser.json());
 app.use(parser.urlencoded({ extended: false }));
 app.use(cors());
 
+app.use(jikanRoutes);
 app.use(authRoutes);
 app.use(activityRoutes);
 app.use((err, req, res, next) => {
@@ -49,6 +52,9 @@ Rating.belongsTo(User, { constraints: true, onDelete: "CASCADE" });
 
 sequelize
   .sync()
+  .then(() => {
+    return redis.connect();
+  })
   .then(() => {
     app.listen(5000 || process.env.PORT);
   })
