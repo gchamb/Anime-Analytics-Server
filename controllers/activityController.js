@@ -9,6 +9,148 @@ const cryptor = new Cryptor(SECRET);
 
 const ANIMES_PER_PAGES = 7;
 
+exports.getOverview = async (req, res, next) => {
+  const userId = req.userId;
+  const overViewLimit = 4;
+  const overview = {
+    watch: [],
+    plan: [],
+    rating: [],
+    stats: {
+      bar: {
+        // Animes watched based on rating
+        animesPerStar: {
+          0: 0,
+          1: 0,
+          2: 0,
+          3: 0,
+          4: 0,
+          5: 0,
+        },
+        // Animes watched in a certain month
+        animesPerMonth: {
+          1: 0,
+          2: 0,
+          3: 0,
+          4: 0,
+          5: 0,
+          6: 0,
+          7: 0,
+          8: 0,
+          9: 0,
+          10: 0,
+          11: 0,
+          12: 0,
+        },
+        // Animes released in a certain based off what you watched
+        animesPerRelease: {},
+      },
+    },
+  };
+  try {
+    const watching = await Watching.findAll({
+      where: { userId: userId },
+      limit: overViewLimit,
+    });
+
+    if (watching.length !== 0) {
+      // Query the actual animes with the data
+      for (let watch of watching) {
+        // Query the anime from each watching id
+        const [anime] = await Anime.findAll({
+          where: {
+            watchingId: watch.id,
+          },
+        });
+        if (anime === undefined) {
+          continue;
+        } else {
+          // Take the information we need
+          const info = {
+            name: anime.name,
+            imageUrl: anime.imageUrl,
+          };
+          // Place it into end array
+          overview.watch.push(info);
+        }
+      }
+    }
+
+    const plantowatch = await PlanToWatch.findAll({
+      where: { userId: userId },
+      limit: overViewLimit,
+    });
+
+    // Query the actual animes with the data
+    for (let plan of plantowatch) {
+      // Query the anime from each watching id
+      const [anime] = await Anime.findAll({
+        where: {
+          planToWatchId: plan.id,
+        },
+      });
+      if (anime === undefined) {
+        continue;
+      } else {
+        // Take the information we need
+        const info = {
+          name: anime.name,
+          imageUrl: anime.imageUrl,
+        };
+        // Place it into end array
+        overview.plan.push(info);
+      }
+    }
+
+    const ratings = await Rating.findAll({
+      where: { userId: userId },
+      limit: overViewLimit,
+    });
+
+    if (ratings.length !== 0) {
+      // Query the actual animes with the data
+      for (let rate of ratings) {
+        // Query the anime from each watching id
+        const [anime] = await Anime.findAll({
+          where: {
+            ratingId: rate.id,
+          },
+        });
+
+        if (anime === undefined) {
+          continue;
+        } else {
+          // Take the information we need
+          const info = {
+            name: anime.name,
+            rate: rate.rate,
+            imageUrl: anime.imageUrl,
+          };
+          // Place it into end array
+          overview.rating.push(info);
+        }
+
+        //Stats Overview
+        overview.stats.bar.animesPerStar[rate.rate] += 1;
+        overview.stats.bar.animesPerMonth[rate.month] += 1;
+
+        const currentYearReleased = anime.yearReleased;
+        if (currentYearReleased === null) {
+          continue;
+        } else if (currentYearReleased in overview.stats.bar.animesPerRelease) {
+          overview.stats.bar.animesPerRelease[currentYearReleased] += 1;
+        } else {
+          overview.stats.bar.animesPerRelease[currentYearReleased] = 1;
+        }
+      }
+    }
+
+    return res.status(200).json(overview);
+  } catch (error) {
+    next(error);
+  }
+};
+
 /* Watching List Controllers*/
 exports.getWatching = async (req, res, next) => {
   const userId = req.userId;
@@ -69,9 +211,7 @@ exports.getWatching = async (req, res, next) => {
     res.status(200).json({
       watching: watchingAnimes,
       pages:
-        count / ANIMES_PER_PAGES <= 1
-          ? 1
-          : Math.ceil(count / ANIMES_PER_PAGES),
+        count / ANIMES_PER_PAGES <= 1 ? 1 : Math.ceil(count / ANIMES_PER_PAGES),
     });
   } catch (err) {
     const error = new Error(err.message);
@@ -217,9 +357,7 @@ exports.getPlanToWatch = async (req, res, next) => {
     res.status(200).json({
       plantowatch: planAnimes,
       pages:
-        count / ANIMES_PER_PAGES <= 1
-          ? 1
-          : Math.ceil(count / ANIMES_PER_PAGES),
+        count / ANIMES_PER_PAGES <= 1 ? 1 : Math.ceil(count / ANIMES_PER_PAGES),
     });
   } catch (err) {
     const error = new Error(err.message);
@@ -450,7 +588,6 @@ exports.getStats = async (req, res, next) => {
     },
     line: {
       // Total Episodes vs Amount of Anime
-      episodesVsAmount: {
         episodesPerMonth: {
           1: 0,
           2: 0,
@@ -465,7 +602,7 @@ exports.getStats = async (req, res, next) => {
           11: 0,
           12: 0,
         },
-      },
+   
     },
     radar: {
       topGenre: {},
@@ -485,7 +622,6 @@ exports.getStats = async (req, res, next) => {
     }
 
     for (let rate of rating) {
-
       if (year === "null") {
         if (!data.years.includes(rate.year)) {
           data.years.push(rate.year);
@@ -525,7 +661,7 @@ exports.getStats = async (req, res, next) => {
       }
 
       const currentEpisodes = anime.episodes;
-      data.line.episodesVsAmount.episodesPerMonth[rate.month] +=
+      data.line.episodesPerMonth[rate.month] +=
         currentEpisodes;
     }
     data.radar.topGenre = { ...data.pie.topGenre };

@@ -4,6 +4,10 @@ const router = express.Router();
 const act = require("../controllers/activityController");
 const protection = require("../protection/checkJWT").isAuth;
 
+/* Home Page Route */
+// GET => returns short overview of all data
+router.get("/overview", protection, act.getOverview);
+
 /* Watching List Routes*/
 // GET => returns the watching list of a user
 router.get("/watching&page=:pg", protection, act.getWatching);
